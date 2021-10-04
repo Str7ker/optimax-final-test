@@ -2,50 +2,45 @@
 
 namespace Api;
 
+use Codeception\Example;
 use Codeception\Util\HttpCode;
 use Step\Triangle;
+use Generator;
 
 class GetTriangleCest
 {
-    // шаг 1: Если треугольник существует, возвращается ответ "isPossible":"true"}
-    public function existingTriangle(Triangle $I): void
+    /**
+     * @param Triangle $I
+     * @dataProvider myProvider
+     */
+
+    public function Triangle(Triangle $I, Example $dataProvider)
     {
-        $params = [
-            'a' => 2,
-            'b' => 3,
-            'c' => 4
-        ];
-        $I->getTriangle($params);
-        $I->seeResponseCodeIs(HttpCode::OK); //200
+        $I->getTriangle($dataProvider['params']);
+        $I->seeResponseCodeIs($dataProvider['expectedCode']);
         $I->seeResponseIsJson();
-        $I->seeResponseContainsJson(['isPossible' => true]);
+        $I->seeResponseContainsJson($dataProvider['expectedMessage']);
     }
 
-    // шаг 2: Если треугольник не существует, возвращается ответ "isPossible":"false"}
-    public function notExistingTriangle(Triangle $I): void
+    private function myProvider(): Generator
     {
-        $data = [
-            'a' => 2,
-            'b' => 2,
-            'c' => 2
+        // шаг 1: Если треугольник существует, возвращается ответ "isPossible":"true"}
+        yield 'existingTriangle' => [
+            'params' => ['a' => 2, 'b' => 3, 'c' => 4],
+            'expectedCode' => HttpCode::OK,
+            'expectedMessage' => ['isPossible' => true],
         ];
-        $I->getTriangle($data);
-        $I->seeResponseCodeIs(HttpCode::OK); //200
-        $I->seeResponseIsJson();
-        $I->seeResponseContainsJson(['isPossible' => false]);
-    }
-
-    // шаг 3: Если переданы не валидные данные, возвращается ответ "message": {"error":"Not valid data"}}
-    public function errorTriangle(Triangle $I): void
-    {
-        $params = [
-            'a' => 2,
-            'b' => 'b',
-            'c' => -2
+        // шаг 2: Если треугольник не существует, возвращается ответ "isPossible":"false"}
+        yield 'notExistingTriangle' => [
+            'params' => ['a' => 2, 'b' => 2, 'c' => 2],
+            'expectedCode' => HttpCode::OK,
+            'expectedMessage' => ['isPossible' => false],
         ];
-        $I->getTriangle($params);
-        $I->seeResponseCodeIs(HttpCode::BAD_REQUEST); //400
-        $I->seeResponseIsJson();
-        $I->seeResponseContainsJson(['message' => ['error' => 'Not valid date']]);
+        // шаг 3: Если переданы не валидные данные, возвращается ответ "message": {"error":"Not valid data"}}
+        yield 'errorTriangle' => [
+            'params' => ['a' => 2, 'b' => 'b', 'c' => 4],
+            'expectedCode' => HttpCode::BAD_REQUEST,
+            'expectedMessage' => ['message' => ['error' => 'Not valid date']],
+        ];
     }
 }
